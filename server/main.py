@@ -31,18 +31,6 @@ app = FastAPI(
 app.add_middleware(DBSessionMiddleware, db_url = get_settings().db_url)
 
 
-    # @app.on_event("shutdown")
-    # async def shutdown():
-    #     await database.disconnect()
-    
-    # @app.on_event("startup")
-    # async def startup():
-    #     await db.create_all()
-        
-    # @app.on_event("shutdown")
-    # async def shutdown():
-    #     await db.close()
-        
 @app.get("/server_info")
 async def info(settings: Annotated[config.Settings, Depends(config.get_settings)]):
     logger.error("logging from the root logger")
