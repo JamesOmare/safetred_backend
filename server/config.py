@@ -5,17 +5,20 @@ from functools import lru_cache
 from pydantic import BaseSettings, BaseModel
 
 
-# env_path = Path('.') / '.env'
-# load_dotenv(dotenv_path=env_path)
-
-load_dotenv(verbose=True)
+load_dotenv()
 
 log = logging.getLogger("uvicorn")
 
 
 class Settings(BaseSettings):
     # we can use SECRET_KEY:str or DATABASE_URL: str only(if it matches the name in .env file)
-    SECRET_KEY: str 
+    SECRET_KEY: str
+    ACCESS_TOKEN_EXPIRE_MINUTES: int
+    REFRESH_TOKEN_EXPIRE_MINUTES:  int
+    JWT_SECRET_KEY: str
+    JWT_REFRESH_SECRET_KEY: str
+    ALGORITHM : str
+    API_V1_STR: str
     db_url: str = config("DATABASE_URL")
     app_name: str = "SafeTred API"
     environment: str = "dev"

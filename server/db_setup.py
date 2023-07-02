@@ -1,38 +1,53 @@
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session
+from sqlalchemy import create_engine
 from config import get_settings
+from typing import Generator
 
-
+DATABASE_URL="postgresql://postgres:foxtrot09er@localhost:5432/safetred"
 
 engine = create_async_engine(
-    get_settings().db_url, connect_args={"check_same_thread": False}
+    get_settings().db_url, future=True, echo=True
 )
 
-# async with engine.begin() as conn:
-#     await conn.run_sync(Base.metadata.drop_all)
-# async with engine.begin() as conn:
-#     await conn.run_sync(Base.metadata.create_all)
+not_async_engine = create_engine(
+    DATABASE_URL, echo=True
+)
 
 SessionLocal = sessionmaker(
     autocommit=False, autoflush=False, bind=engine, class_=AsyncSession, expire_on_commit=False
 )
 
+Not_Async_SessionLocal = sessionmaker(
+    autocommit=False, autoflush=False, bind=not_async_engine
+)
+
 Base = declarative_base()
 
-
-def get_db():
-    db = SessionLocal()
+# Dependency
+def not_async_get_db():
+    db = Not_Async_SessionLocal()
     try:
         yield db
     finally:
         db.close()
         
-        
-async def async_get_db():
+async def get_db():
     async with SessionLocal() as db:
-        yield db
-        await db.commit()
+        try:
+            yield db
+        finally:
+            await db.commit()
+            await db.close()
+
+        
+        
+# async def async_get_db():
+#     async with SessionLocal() as db:
+#         yield db
+#         await db.commit()
         
 # async def init_db():
 #     try:
@@ -60,9 +75,10 @@ async def async_get_db():
 
 # db = AsyncDatabaseSession()
 
-# async def commit_roll_back():
-#     try:
-#         await db.commit()
-#     except Exception:
-#         await db.rollback()
-#         raise
+async def commit_roll_back():
+    db = SessionLocal()
+    try:
+        await db.commit()
+    except Exception:
+        await db.rollback()
+        raise

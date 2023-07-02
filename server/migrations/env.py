@@ -28,7 +28,7 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 from db_setup import Base    
-from model import users
+from model import users, mixins
 
 target_metadata = Base.metadata
 
