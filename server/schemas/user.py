@@ -1,10 +1,9 @@
-from enum import unique
 from pydantic import BaseModel, validator
 from fastapi import HTTPException
 import logging
 import re
 from pydantic import BaseModel, EmailStr, Field
-
+from typing import Optional
 # get root logger
 logger = logging.getLogger(__name__)
 
@@ -38,6 +37,16 @@ class UserAuth(BaseModel):
                 "is_superuser": False
             }
         }
+        
+class UserGet(BaseModel):
+    email: EmailStr
+    username: str
+    phone_number: str
+    is_active: bool = True
+    is_superuser: bool = False
+    
+    class Config:
+        orm_mode = True
  
 
 class UserCreate(BaseModel):
@@ -59,6 +68,9 @@ class UserCreate(BaseModel):
         if v and not re.search(regex, v, re.I):
             raise HTTPException(status_code=400, detail="Invalid input phone number!")
         return v
+    
+    class Config:
+        orm_mode = True
 
 class User(UserCreate):
     id: int

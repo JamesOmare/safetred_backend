@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, status
-from schemas.user import UserAuth, UserCreate
+from schemas.user import UserAuth, UserCreate, UserGet
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from fastapi import Depends
@@ -23,7 +23,7 @@ async def create_user(data: UserAuth, db: Session = Depends(get_db)):
 
 
 
-@user_router.get('/me', summary='Get details of currently logged in user', response_model=UserCreate)
+@user_router.get('/me', summary='Get details of currently logged in user', response_model=UserGet)
 async def get_me(user: Users = Depends(get_current_user)):
     return user
 

@@ -1,10 +1,10 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import update as sql_update
 from model.users import Users
-from schemas.user import UserCreate
 from sqlalchemy.future import select
 from typing import Optional
 from security import get_password_hash, verify_password
+from sqlalchemy.ext.asyncio import AsyncSession
 
 async def commit_rollback(db: Session):
     try:
@@ -29,8 +29,15 @@ class UserRepo:
             await db.refresh(db_user)
             return db_user
         
-    def get_user_by_id(db: Session,_id):
-        return db.query(Users).filter(Users.id == _id).first()
+    
+    async def get_user_by_id(db: AsyncSession, id: int) -> Users:
+        query = select(Users).where(Users.id == id)
+        result = await db.execute(query)
+        user = result.scalars().first()
+        return user
+        
+    # def get_user_by_id(db: Session,_id):
+    #     return db.query(Users).filter(Users.id == _id).first()
     
     def get_user_by_email(db: Session, email):
         return db.query(Users).filter(Users.email == email).first()

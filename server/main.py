@@ -1,6 +1,7 @@
 import uvicorn
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, WebSocket, WebSocketDisconnect
 from typing_extensions import Annotated
+from typing import List
 import config
 import logging
 from logging.config import dictConfig
@@ -10,12 +11,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from config import get_settings
 from fastapi.responses import JSONResponse
 from api.api_v1.router import router
+from datetime import datetime
+import json
 
 dictConfig(LogConfig().dict())
 logger = logging.getLogger("mycoolapp")
 
 origins= [
-    "http://localhost:3000"
+    "http://localhost:3001"
 ]
 
 # logger.info("Dummy Info")
@@ -49,6 +52,29 @@ app.add_middleware(
 
 app.include_router(router, prefix=get_settings().API_V1_STR)
 
+class ConnectionManager:
+
+    def __init__(self) -> None:
+        self.active_connections: List[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        self.active_connections.remove(websocket)
+
+    async def send_personal_message(self, message: str, websocket: WebSocket):
+        await websocket.send_text(message)
+
+    async def broadcast(self, message: str):
+        for connection in self.active_connections:
+            await connection.send_text(message)
+
+
+manager = ConnectionManager()
+
+
 @app.get("/server_info")
 async def info(settings: Annotated[config.Settings, Depends(config.get_settings)]):
     logger.error("logging from the root logger")
@@ -62,6 +88,22 @@ def validation_exception_handler(request, err):
     base_error_message = f"Failed to execute: {request.method}: {request.url}"
     return JSONResponse(status_code=400, content={"message": f"{base_error_message}. Detail: {err}"})
 
+@app.websocket("/ws/{client_id}")
+async def websocket_endpoint(websocket: WebSocket, client_id: int):
+    await manager.connect(websocket)
+    now = datetime.now()
+    current_time = now.strftime("%H:%M")
+    try:
+        while True:
+            data = await websocket.receive_text()
+            # await manager.send_personal_message(f"You wrote: {data}", websocket)
+            message = {"time":current_time,"clientId":client_id,"message":data}
+            await manager.broadcast(json.dumps(message))
+            
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+        message = {"time":current_time,"clientId":client_id,"message":"Offline"}
+        await manager.broadcast(json.dumps(message))
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="localhost", port=8000, reload=True)

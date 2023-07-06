@@ -7,6 +7,8 @@ from jose import jwt
 from pydantic import ValidationError
 from repository.users import UserRepo
 from schemas.auth_schema import TokenPayload
+from sqlalchemy.orm import Session
+from db_setup import get_db
 
 reuseable_oauth = OAuth2PasswordBearer(
     tokenUrl=f"{get_settings().API_V1_STR}/auth/login",
@@ -14,7 +16,7 @@ reuseable_oauth = OAuth2PasswordBearer(
 )
 
 
-async def get_current_user(token: str = Depends(reuseable_oauth)) -> Users:
+async def get_current_user(token: str = Depends(reuseable_oauth), db: Session = Depends(get_db)) -> Users:
     try:
         payload = jwt.decode(
             token, get_settings().JWT_SECRET_KEY, algorithms=[get_settings().ALGORITHM]
@@ -33,8 +35,8 @@ async def get_current_user(token: str = Depends(reuseable_oauth)) -> Users:
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
-        
-    user = await UserRepo.get_user_by_id(token_data.sub)
+   
+    user = await UserRepo.get_user_by_id(db, int(token_data.sub))
     
     if not user:
         raise HTTPException(

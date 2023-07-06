@@ -26,17 +26,25 @@ class UserService:
         await user_in.save()
         return user_in
 
-    
-    
     @staticmethod
-    async def authenticate(db: Session, username: str, password: str) -> Optional[Users]:
-        user = await UserService.get_user_by_username(db, username)
+    async def authenticate(db: Session, email: str, password: str) -> Optional[Users]:
+        user = await UserService.get_user_by_email(db, email)
         if not user:
             return None
         if not verify_password(password=password, hashed_pass=user.password):
             return None
         
         return user
+    
+    # @staticmethod
+    # async def authenticate(db: Session, username: str, password: str) -> Optional[Users]:
+    #     user = await UserService.get_user_by_username(db, username)
+    #     if not user:
+    #         return None
+    #     if not verify_password(password=password, hashed_pass=user.password):
+    #         return None
+        
+    #     return user
    
     # Non-async version of authenticate method above 
     # @staticmethod
@@ -60,7 +68,7 @@ class UserService:
     async def get_user_by_email(db: AsyncSession, email: str) -> Users:
         query = select(Users).where(Users.email == email)
         result = await db.execute(query)
-        user = await result.scalars().first()
+        user = result.scalars().first()
         return user
     
     @staticmethod
@@ -100,6 +108,11 @@ class UserService:
         await db.commit()
         await db.refresh(user)
         return user
+    
+    # @staticmethod
+    # async def get_user_by_id(id: UUID) -> Optional[Users]:
+    #     user = await Users.find_one(Users.id == id)
+    #     return user
 
     
     async def create(db: Session, user: Users):
@@ -116,8 +129,11 @@ class UserService:
             await db.refresh(db_user)
             return db_user
     
-    async def get_user_by_id(db: Session, _id) -> Users:
-        return await db.query(Users).filter(Users.id == _id).first()
+    async def get_user_by_id(db: AsyncSession, id: int) -> Users:
+        query = select(Users).where(Users.id == id)
+        result = await db.execute(query)
+        user = result.scalars().first()
+        return user
     
     # non-async version of get_by_username query
     # def get_user_by_username(db: Session, username: str) -> Users:
