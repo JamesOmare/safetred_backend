@@ -17,9 +17,14 @@ import json
 dictConfig(LogConfig().dict())
 logger = logging.getLogger("mycoolapp")
 
+# origins= [
+#     "http://localhost:3000"
+# ]
+
 origins= [
-    "http://localhost:3001"
+    "*"
 ]
+
 
 # logger.info("Dummy Info")
 # logger.error("Dummy Error")
