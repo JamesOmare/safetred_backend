@@ -1,5 +1,4 @@
 
-from turtle import st
 from sqlalchemy.future import select
 from typing import Optional
 from sqlalchemy.orm import Session
